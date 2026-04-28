@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>正解導出ツール</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 24px;
+      background: #f7f7f7;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      margin-bottom: 18px;
+    }
+
+    .label {
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .buttons button {
+      width: 52px;
+      height: 40px;
+      border: 1px solid #999;
+      border-radius: 8px;
+      background: #eee;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .buttons button.selected {
+      background: #90ee90;
+      font-weight: bold;
+      border-color: #3a9d3a;
+    }
+
+    #output {
+      margin-top: 24px;
+      padding: 16px;
+      min-height: 52px;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      background: #fafafa;
+      font-size: 18px;
+      white-space: pre-wrap;
+    }
+
+    #output.error {
+      color: red;
+      font-weight: bold;
+    }
+
+    #output.success {
+      color: green;
+      font-weight: bold;
+    }
+
+    .reset {
+      margin-top: 16px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #999;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>正解導出ツール</h1>
+
+    <div class="row">
+      <div class="label">1111 の正解数</div>
+      <div class="buttons" data-trial="1">
+        <button data-value="0">0</button>
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button data-value="4">4</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">1122 の正解数</div>
+      <div class="buttons" data-trial="2">
+        <button data-value="0">0</button>
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button data-value="4">4</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">1212 の正解数</div>
+      <div class="buttons" data-trial="3">
+        <button data-value="0">0</button>
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button data-value="4">4</button>
+      </div>
+    </div>
+
+    <div id="output">条件を選択してください</div>
+
+    <button class="reset" onclick="resetAll()">リセット</button>
+  </div>
+
+  <script>
+    const guesses = {
+      1: "1111",
+      2: "1122",
+      3: "1212"
+    };
+
+    document.querySelectorAll(".buttons button").forEach(button => {
+      button.addEventListener("click", () => {
+        const group = button.parentElement;
+
+        group.querySelectorAll("button").forEach(b => {
+          b.classList.remove("selected");
+        });
+
+        button.classList.add("selected");
+
+        calculate();
+      });
+    });
+
+    function generateAllPatterns() {
+      const list = [];
+
+      for (let a = 1; a <= 2; a++) {
+        for (let b = 1; b <= 2; b++) {
+          for (let c = 1; c <= 2; c++) {
+            for (let d = 1; d <= 2; d++) {
+              list.push(`${a}${b}${c}${d}`);
+            }
+          }
+        }
+      }
+
+      return list;
+    }
+
+    function countCorrect(answer, guess) {
+      let count = 0;
+
+      for (let i = 0; i < 4; i++) {
+        if (answer[i] === guess[i]) {
+          count++;
+        }
+      }
+
+      return count;
+    }
+
+    function getCorrectCount(trial) {
+      const group = document.querySelector(`.buttons[data-trial="${trial}"]`);
+      const selected = group.querySelector("button.selected");
+
+      if (!selected) {
+        return -1;
+      }
+
+      return Number(selected.dataset.value);
+    }
+
+    function calculate() {
+      const output = document.getElementById("output");
+
+      output.classList.remove("error", "success");
+
+      const c1 = getCorrectCount(1);
+      const c2 = getCorrectCount(2);
+      const c3 = getCorrectCount(3);
+
+      if (c1 < 0 && c2 < 0 && c3 < 0) {
+        output.textContent = "条件を選択してください";
+        return;
+      }
+
+      let candidates = generateAllPatterns();
+
+      if (c1 >= 0) {
+        candidates = candidates.filter(x => {
+          return countCorrect(x, guesses[1]) === c1;
+        });
+      }
+
+      if (c2 >= 0) {
+        candidates = candidates.filter(x => {
+          return countCorrect(x, guesses[2]) === c2;
+        });
+      }
+
+      if (c3 >= 0) {
+        candidates = candidates.filter(x => {
+          return countCorrect(x, guesses[3]) === c3;
+        });
+      }
+
+      if (candidates.length === 0) {
+        output.textContent = "その組み合わせはありません";
+        output.classList.add("error");
+        return;
+      }
+
+      if (candidates.length === 1) {
+        output.textContent = `正解は ${candidates[0]}`;
+        output.classList.add("success");
+        return;
+      }
+
+      output.textContent = candidates.join(" か ");
+    }
+
+    function resetAll() {
+      document.querySelectorAll(".buttons button").forEach(button => {
+        button.classList.remove("selected");
+      });
+
+      const output = document.getElementById("output");
+      output.classList.remove("error", "success");
+      output.textContent = "条件を選択してください";
+    }
+  </script>
+</body>
+</html>
