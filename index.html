@@ -136,17 +136,24 @@
     };
 
     document.querySelectorAll(".buttons button").forEach(button => {
-      button.addEventListener("click", () => {
-        const group = button.parentElement;
+button.addEventListener("click", () => {
+  const group = button.parentElement;
 
-        group.querySelectorAll("button").forEach(b => {
-          b.classList.remove("selected");
-        });
+  // ★ すでに選択されてるかチェック
+  const isSelected = button.classList.contains("selected");
 
-        button.classList.add("selected");
+  // 一旦全部外す
+  group.querySelectorAll("button").forEach(b => {
+    b.classList.remove("selected");
+  });
 
-        calculate();
-      });
+  // ★ もともと未選択だった場合だけ選択する
+  if (!isSelected) {
+    button.classList.add("selected");
+  }
+
+  calculate();
+});
     });
 
     function generateAllPatterns() {
